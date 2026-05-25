@@ -8,17 +8,17 @@ Five SDKs, one shape. Each ships:
    (`markerFeature`/`markerSourceSpec`) so apps don't hand-roll layer JSON.
 4. **`bboxOf(points)`** — bounds for `fitBounds`.
 5. The **rendering wrapper** is platform-native: MapLibre GL JS on the web, the
-   maplibre-react-native package on RN, maplibre_gl on Flutter, MapLibre Native
+   @maplibre/maplibre-react-native package on RN, maplibre_gl on Flutter, MapLibre Native
    iOS on Swift, MapLibre Native Android on Kotlin. Each SDK is a thin layer on
    top — apps install the renderer themselves so they keep version control.
 
 | Platform     | Package / Path                                                | Renderer pairing                                | Tests   |
 |--------------|---------------------------------------------------------------|-------------------------------------------------|---------|
 | Web (TS)     | `@scoova/maps` — `/scoova-maps-web`                           | maplibre-gl (peerDep, 3+)                       | 13 ✅   |
-| React Native | `@scoova/maps-react-native` — `/scoova-maps-react-native`     | `@maplibre/maplibre-react-native` (peerDep)     | 8 ✅    |
+| React Native | `@scoova/maps-react-native` — `/scoova-maps-react-native`     | `@MapLibre/@maplibre/maplibre-react-native` (peerDep)     | 8 ✅    |
 | Flutter      | `scoova_maps` — `/scoova_maps_flutter`                        | maplibre_gl (consumer's choice)                 | 9 ✅    |
 | iOS Swift    | `ScoovaMapKit` — `/ScoovaMapKit`                              | MapLibre Native iOS (`MLNMapView`)              | 9 ✅    |
-| Android JVM  | `info.scoo-va:scoova-maps` — `/scoova-maps-android`           | MapLibre Native Android (`org.maplibre.android`) | 9 ✅    |
+| Android JVM  | `info.scoo-va:scoova-maps` — `/scoova-maps-android`           | MapLibre Native Android (`org.MapLibre.android`) | 9 ✅    |
 
 ## Common surface
 

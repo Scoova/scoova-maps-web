@@ -112,7 +112,7 @@ export async function staticMap(opts: StaticMapOptions): Promise<Blob> {
 }
 
 /**
- * MapLibre-compatible style URL — drop straight into
+ * Scoova-compatible style URL — drop straight into
  * `new maplibregl.Map({ style: styleUrl('scoova-light', { apiKey }) })`.
  */
 export function styleUrl(styleName: string, opts: StyleUrlOptions): string {

@@ -74,7 +74,7 @@ describe('markerSourceSpec', () => {
   });
 });
 
-// ─── ScoovaMap with a fake maplibre ─────────────────────────────────────────
+// ─── ScoovaMap with a fake MapLibre ─────────────────────────────────────────
 
 function fakeMaplibre(): { lib: MaplibreLike; instances: FakeMap[]; lastOpts: () => unknown } {
   const instances: FakeMap[] = [];
@@ -119,7 +119,7 @@ class FakeMap implements MaplibreMap {
 describe('ScoovaMap', () => {
   it('passes Cairo + zoom 12 + Scoova style URL by default', () => {
     const fake = fakeMaplibre();
-    new ScoovaMap({ container: 'map', maplibre: fake.lib });
+    new ScoovaMap({ container: 'map', MapLibre: fake.lib });
     const opts = fake.lastOpts() as { center: [number, number]; zoom: number; style: string };
     expect(opts.center).toEqual([DEFAULTS.defaultCenter.lon, DEFAULTS.defaultCenter.lat]);
     expect(opts.zoom).toBe(12);
@@ -128,14 +128,14 @@ describe('ScoovaMap', () => {
 
   it('passes the inline style spec when style="inline"', () => {
     const fake = fakeMaplibre();
-    new ScoovaMap({ container: 'map', maplibre: fake.lib, style: 'inline' });
+    new ScoovaMap({ container: 'map', MapLibre: fake.lib, style: 'inline' });
     const opts = fake.lastOpts() as { style: { version: number } };
     expect(opts.style.version).toBe(8);
   });
 
   it('addRoute adds a source + casing + line layer', () => {
     const fake = fakeMaplibre();
-    const sm = new ScoovaMap({ container: 'map', maplibre: fake.lib });
+    const sm = new ScoovaMap({ container: 'map', MapLibre: fake.lib });
     sm.addRoute({ coords: [[31.24, 30.04], [31.25, 30.05]] });
     const m = fake.instances[0];
     expect(m.sources.has('scoova-route')).toBe(true);
@@ -145,7 +145,7 @@ describe('ScoovaMap', () => {
 
   it('removeRoute clears source + both layers', () => {
     const fake = fakeMaplibre();
-    const sm = new ScoovaMap({ container: 'map', maplibre: fake.lib });
+    const sm = new ScoovaMap({ container: 'map', MapLibre: fake.lib });
     sm.addRoute({ coords: [[31.24, 30.04], [31.25, 30.05]] });
     sm.removeRoute();
     const m = fake.instances[0];
@@ -156,7 +156,7 @@ describe('ScoovaMap', () => {
 
   it('addMarker adds a circle layer at the right coords', () => {
     const fake = fakeMaplibre();
-    const sm = new ScoovaMap({ container: 'map', maplibre: fake.lib });
+    const sm = new ScoovaMap({ container: 'map', MapLibre: fake.lib });
     sm.addMarker({ position: { lat: 30.04, lon: 31.24 } });
     const m = fake.instances[0];
     expect(m.layers.has('scoova-marker')).toBe(true);
@@ -164,9 +164,9 @@ describe('ScoovaMap', () => {
     expect(layer.type).toBe('circle');
   });
 
-  it('flyTo + fitBounds proxy through to maplibre', () => {
+  it('flyTo + fitBounds proxy through to MapLibre', () => {
     const fake = fakeMaplibre();
-    const sm = new ScoovaMap({ container: 'map', maplibre: fake.lib });
+    const sm = new ScoovaMap({ container: 'map', MapLibre: fake.lib });
     sm.flyTo({ lat: 30.04, lon: 31.24 }, 14);
     sm.fitBounds([{ lat: 30, lon: 31 }, { lat: 31, lon: 32 }]);
     const m = fake.instances[0];
@@ -179,7 +179,7 @@ describe('ScoovaMap', () => {
 
   it('appends ?locale=… to the style URL when locale is passed', () => {
     const fake = fakeMaplibre();
-    new ScoovaMap({ container: 'map', maplibre: fake.lib, locale: 'fr' });
+    new ScoovaMap({ container: 'map', MapLibre: fake.lib, locale: 'fr' });
     const opts = fake.lastOpts() as { style: string };
     expect(typeof opts.style).toBe('string');
     expect(opts.style).toContain('locale=fr');

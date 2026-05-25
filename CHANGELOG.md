@@ -10,7 +10,7 @@ project follows [Semantic Versioning](https://semver.org/).
   to drop into an `<img src=…>` tag.
 - `staticMap(opts)` — `Promise<Blob>` convenience for fetching the rendered
   PNG (and propagating `Accept-Language`).
-- `styleUrl(styleName, { apiKey, locale? })` — MapLibre-compatible style URL
+- `styleUrl(styleName, { apiKey, locale? })` — Scoova-compatible style URL
   builder. Doesn't require constructing a `ScoovaMap`.
 - `locale` option on `ScoovaMap` — appended to the resolved style URL as
   `?locale=…`, matching the gateway's locale resolution.

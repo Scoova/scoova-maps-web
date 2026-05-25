@@ -28,7 +28,7 @@ import { ScoovaMap } from '@scoova/maps';
 
 const map = new ScoovaMap({
   container: 'map',
-  maplibre: maplibregl,
+  MapLibre: maplibregl,
   // Defaults: center Cairo, zoom 12, Scoova default style.
   locale: 'fr',  // optional — localises place labels via ?locale=fr
 });
@@ -81,7 +81,7 @@ new maplibregl.Map({
 ## API
 
 ### Live map
-- `new ScoovaMap({ container, maplibre, center?, zoom?, style?, locale? })`
+- `new ScoovaMap({ container, MapLibre, center?, zoom?, style?, locale? })`
 - `addRoute({ coords, color?, casingColor?, alternate? })`
 - `removeRoute(id?)`
 - `addMarker({ position, color?, radius? })`

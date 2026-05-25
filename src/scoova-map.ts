@@ -4,7 +4,7 @@
  * `addRoute()` / `addMarker()` helpers so apps don't have to hand-roll layer
  * specs.
  *
- * `maplibre-gl` is a peer dependency. The constructor accepts the maplibre
+ * `maplibre-gl` is a peer dependency. The constructor accepts the MapLibre
  * module via DI so callers stay in control of the import path (and so the
  * style/route/marker helpers stay testable without a DOM).
  */
@@ -34,7 +34,7 @@ export interface ScoovaMapOptions {
   /** A DOM container element (or its id). */
   container: HTMLElement | string;
   /** Inject the maplibre-gl module — `import maplibregl from 'maplibre-gl'`. */
-  maplibre: MaplibreLike;
+  MapLibre: MaplibreLike;
   /** Initial center, defaults to Cairo. */
   center?: LngLat;
   /** Initial zoom, defaults to 12. */
@@ -81,7 +81,7 @@ export class ScoovaMap {
       attributionControl: { customAttribution: DEFAULTS.attribution },
       ...(options.maplibreOptions ?? {}),
     };
-    this.map = new options.maplibre.Map(opts);
+    this.map = new options.MapLibre.Map(opts);
   }
 
   /** Draw a route polyline. Idempotent: re-adding with the same id replaces. */

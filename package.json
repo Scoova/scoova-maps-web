@@ -1,7 +1,7 @@
 {
   "name": "@scoova/maps",
-  "version": "1.1.1",
-  "description": "Scoova map SDK for the web \u2014 MapLibre GL JS wrapper with Scoova tile/style defaults, route overlays, marker helpers, and static-map URL builders.",
+  "version": "1.1.2",
+  "description": "Scoova map SDK for the web \u2014 Web map renderer with Scoova tile/style defaults, route overlays, marker helpers, and static-map URL builders.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -24,7 +24,7 @@
   "keywords": [
     "scoova",
     "maps",
-    "maplibre",
+    "MapLibre",
     "static-map",
     "tiles"
   ],
