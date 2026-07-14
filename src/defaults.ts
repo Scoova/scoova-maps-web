@@ -3,7 +3,11 @@
  * pointing at the same endpoints.
  */
 export const DEFAULTS = {
-  styleUrl: 'https://tiles.scoo-va.info/style.json',
+  /** Real, built-in style name resolved via the api-key-gated gateway —
+   * see styleUrl() in static-map.ts. Not a fixed URL: 'default' used to
+   * point at a single hardcoded, unauthenticated tiles.scoo-va.info URL
+   * that didn't match how the gateway actually serves styles. */
+  defaultStyle: 'scoova-gmaps',
   tilesUrl: 'https://tiles.scoo-va.info/v1/{z}/{x}/{y}.mvt',
   pmtilesUrl: 'pmtiles://https://tiles.scoo-va.info/world.pmtiles',
   attribution: '© Scoova · OpenStreetMap contributors',

@@ -15,6 +15,7 @@ export type {
 export { ScoovaMap } from './scoova-map.js';
 export type {
   ScoovaMapOptions,
+  RendererLike,
   MaplibreLike,
   MaplibreMap,
 } from './scoova-map.js';
@@ -23,7 +24,6 @@ export {
   staticMap,
   styleUrl,
   DEFAULT_API_BASE,
-  DEFAULT_TILES_BASE,
 } from './static-map.js';
 export type {
   StaticMapMarker,

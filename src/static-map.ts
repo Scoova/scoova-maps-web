@@ -2,23 +2,37 @@
  * Static map URL helpers and a tiny `fetch()` wrapper.
  *
  * These functions are intentionally standalone — you do NOT need to construct
- * a {@link ScoovaMap} (which pulls in `maplibre-gl`) to build a static-map URL
- * or a tile/style URL. Drop these into image tags, OG share renderers, email
- * templates, PDF receipts, server-side rendering, etc.
+ * a {@link ScoovaMap} (which pulls in `@scoova/mgl`) to build a static-map
+ * URL or a tile/style URL. Drop these into image tags, OG share renderers,
+ * email templates, PDF receipts, server-side rendering, etc.
  *
- * All requests go to the Scoova API gateway:
+ * All requests go through the Scoova API gateway (api-key gated, metered,
+ * rate-limited) — never the raw tile host directly. An earlier version of
+ * this file pointed style URLs at a raw `tiles.scoo-va.info` subdomain,
+ * which an internal security audit already flagged as unauthenticated —
+ * publishing that pattern in a public SDK would have taught every
+ * integrator to bypass the api-key system entirely. Fixed to match the
+ * one real, confirmed-working path (same one every other Scoova client
+ * uses):
  *
  *   static map  -> https://api.scoo-va.info/api/v1/staticmap/{style}/static/{center}/{w}x{h}.png?…
- *   style URL   -> https://tiles.scoo-va.info/styles/{style}/style.json?…
+ *   style URL   -> https://api.scoo-va.info/api/v1/tiles/styles/{style}/style.json?…
  *
- * Locale: the gateway honours `?locale=` and `Accept-Language`. Since
- * `<img src=…>` has no header surface, we always tack the locale onto the
- * query string when provided.
+ * Locale: NOT a `?locale=` query param on the style URL — the gateway
+ * serves per-language label variants as separate named styles
+ * (`scoova-gmaps-ar`, `scoova-gmaps-fr`, …), so localizing means
+ * requesting a different style name, not a different query string. Only
+ * `scoova-gmaps` and `scoova-gmaps-dark` have language variants;
+ * `scoova-satellite` has no text labels, so it's passed through
+ * unchanged regardless of locale. The static-map endpoint is separate
+ * and does take `?locale=` for label rendering inside the raster image
+ * (there's no "different style name" concept for a flattened PNG).
  */
 import type { LngLat } from './style.js';
 
 export const DEFAULT_API_BASE = 'https://api.scoo-va.info/api/v1';
-export const DEFAULT_TILES_BASE = 'https://tiles.scoo-va.info';
+/** Style names whose label layers have real per-language variants server-side. */
+const LOCALIZED_STYLES = ['scoova-gmaps', 'scoova-gmaps-dark'];
 
 export interface StaticMapMarker {
   lat: number;
@@ -63,10 +77,17 @@ export interface StaticMapOptions {
 export interface StyleUrlOptions {
   /** API key — required by the gateway. */
   apiKey: string;
-  /** Override the tiles base, default `https://tiles.scoo-va.info`. */
-  tilesBase?: string;
-  /** Optional BCP-47 locale to localise place labels. */
-  locale?: string;
+  /** Override the API base, e.g. for a self-hosted gateway. */
+  apiBase?: string;
+  /**
+   * Site language (`en`, `ar`, `fr`, …) to localise place labels. For
+   * `scoova-gmaps` / `scoova-gmaps-dark` this selects a real per-language
+   * style variant server-side (`{style}-{lang}`) — it is not a query
+   * param, because the label text itself lives in a different style
+   * document per language, not a runtime-swappable field. Styles without
+   * language variants (`scoova-satellite`) ignore this.
+   */
+  lang?: string;
 }
 
 /** Build a static-map URL ready to drop into `<img src=…>`. Pure function — no network. */
@@ -113,12 +134,19 @@ export async function staticMap(opts: StaticMapOptions): Promise<Blob> {
 
 /**
  * Scoova-compatible style URL — drop straight into
- * `new maplibregl.Map({ style: styleUrl('scoova-light', { apiKey }) })`.
+ * `new maplibregl.Map({ style: styleUrl('scoova-gmaps', { apiKey }) })`.
+ *
+ * Real, built-in style names: `scoova-gmaps`, `scoova-gmaps-dark`,
+ * `scoova-satellite`. Any other string is passed through unchanged (a
+ * self-hosted or custom style name), so this stays forward-compatible
+ * with new styles added server-side without an SDK release.
  */
 export function styleUrl(styleName: string, opts: StyleUrlOptions): string {
-  const base = (opts.tilesBase ?? DEFAULT_TILES_BASE).replace(/\/+$/, '');
+  const base = (opts.apiBase ?? DEFAULT_API_BASE).replace(/\/+$/, '');
+  const resolvedName = opts.lang && LOCALIZED_STYLES.includes(styleName)
+    ? `${styleName}-${opts.lang}`
+    : styleName;
   const params = new URLSearchParams();
   params.set('api_key', opts.apiKey);
-  if (opts.locale) params.set('locale', opts.locale);
-  return `${base}/styles/${encodeURIComponent(styleName)}/style.json?${params.toString()}`;
+  return `${base}/tiles/styles/${encodeURIComponent(resolvedName)}/style.json?${params.toString()}`;
 }

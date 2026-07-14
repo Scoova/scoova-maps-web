@@ -9,14 +9,14 @@ import {
   staticMap,
   styleUrl,
   DEFAULT_API_BASE,
-  DEFAULT_TILES_BASE,
+  type RendererLike,
   type MaplibreLike,
   type MaplibreMap,
 } from '../src/index.js';
 
 describe('DEFAULTS', () => {
   it('points at scoo-va.info', () => {
-    expect(DEFAULTS.styleUrl).toBe('https://tiles.scoo-va.info/style.json');
+    expect(DEFAULTS.defaultStyle).toBe('scoova-gmaps');
     expect(DEFAULTS.tilesUrl).toBe('https://tiles.scoo-va.info/v1/{z}/{x}/{y}.mvt');
     expect(DEFAULTS.defaultCenter.lat).toBeCloseTo(30.0444);
     expect(DEFAULTS.defaultCenter.lon).toBeCloseTo(31.2357);
@@ -76,10 +76,10 @@ describe('markerSourceSpec', () => {
 
 // ─── ScoovaMap with a fake MapLibre ─────────────────────────────────────────
 
-function fakeMaplibre(): { lib: MaplibreLike; instances: FakeMap[]; lastOpts: () => unknown } {
+function fakeMaplibre(): { lib: RendererLike; instances: FakeMap[]; lastOpts: () => unknown } {
   const instances: FakeMap[] = [];
   let lastOpts: unknown = null;
-  const lib: MaplibreLike = {
+  const lib: RendererLike = {
     Map: class {
       constructor(opts: unknown) {
         lastOpts = opts;
@@ -87,7 +87,7 @@ function fakeMaplibre(): { lib: MaplibreLike; instances: FakeMap[]; lastOpts: ()
         instances.push(m);
         return m as unknown as MaplibreMap;
       }
-    } as unknown as MaplibreLike['Map'],
+    } as unknown as RendererLike['Map'],
   };
   return { lib, instances, lastOpts: () => lastOpts };
 }
@@ -117,25 +117,45 @@ class FakeMap implements MaplibreMap {
 }
 
 describe('ScoovaMap', () => {
-  it('passes Cairo + zoom 12 + Scoova style URL by default', () => {
+  it('passes Cairo + zoom 12 + the real gateway style URL by default', () => {
     const fake = fakeMaplibre();
-    new ScoovaMap({ container: 'map', MapLibre: fake.lib });
+    new ScoovaMap({ container: 'map', renderer: fake.lib, apiKey: 'test-key' });
     const opts = fake.lastOpts() as { center: [number, number]; zoom: number; style: string };
     expect(opts.center).toEqual([DEFAULTS.defaultCenter.lon, DEFAULTS.defaultCenter.lat]);
     expect(opts.zoom).toBe(12);
-    expect(opts.style).toBe(DEFAULTS.styleUrl);
+    expect(opts.style).toBe(styleUrl(DEFAULTS.defaultStyle, { apiKey: 'test-key' }));
+    expect(opts.style).toContain(DEFAULT_API_BASE);
   });
 
-  it('passes the inline style spec when style="inline"', () => {
+  it('throws a clear error when apiKey is missing for a gateway-resolved style', () => {
     const fake = fakeMaplibre();
-    new ScoovaMap({ container: 'map', MapLibre: fake.lib, style: 'inline' });
+    expect(() => new ScoovaMap({ container: 'map', renderer: fake.lib }))
+      .toThrow(/apiKey/);
+  });
+
+  it('still accepts the deprecated MapLibre key as an alias for renderer', () => {
+    const fake = fakeMaplibre();
+    new ScoovaMap({ container: 'map', MapLibre: fake.lib, apiKey: 'test-key' } as never);
+    expect(fake.instances).toHaveLength(1);
+  });
+
+  it('passes the inline style spec when style="inline" (no apiKey needed)', () => {
+    const fake = fakeMaplibre();
+    new ScoovaMap({ container: 'map', renderer: fake.lib, style: 'inline' });
     const opts = fake.lastOpts() as { style: { version: number } };
     expect(opts.style.version).toBe(8);
   });
 
+  it('passes a fully-formed style URL straight through without requiring apiKey', () => {
+    const fake = fakeMaplibre();
+    new ScoovaMap({ container: 'map', renderer: fake.lib, style: 'https://example.test/style.json' });
+    const opts = fake.lastOpts() as { style: string };
+    expect(opts.style).toBe('https://example.test/style.json');
+  });
+
   it('addRoute adds a source + casing + line layer', () => {
     const fake = fakeMaplibre();
-    const sm = new ScoovaMap({ container: 'map', MapLibre: fake.lib });
+    const sm = new ScoovaMap({ container: 'map', renderer: fake.lib, apiKey: 'test-key' });
     sm.addRoute({ coords: [[31.24, 30.04], [31.25, 30.05]] });
     const m = fake.instances[0];
     expect(m.sources.has('scoova-route')).toBe(true);
@@ -145,7 +165,7 @@ describe('ScoovaMap', () => {
 
   it('removeRoute clears source + both layers', () => {
     const fake = fakeMaplibre();
-    const sm = new ScoovaMap({ container: 'map', MapLibre: fake.lib });
+    const sm = new ScoovaMap({ container: 'map', renderer: fake.lib, apiKey: 'test-key' });
     sm.addRoute({ coords: [[31.24, 30.04], [31.25, 30.05]] });
     sm.removeRoute();
     const m = fake.instances[0];
@@ -156,7 +176,7 @@ describe('ScoovaMap', () => {
 
   it('addMarker adds a circle layer at the right coords', () => {
     const fake = fakeMaplibre();
-    const sm = new ScoovaMap({ container: 'map', MapLibre: fake.lib });
+    const sm = new ScoovaMap({ container: 'map', renderer: fake.lib, apiKey: 'test-key' });
     sm.addMarker({ position: { lat: 30.04, lon: 31.24 } });
     const m = fake.instances[0];
     expect(m.layers.has('scoova-marker')).toBe(true);
@@ -164,9 +184,9 @@ describe('ScoovaMap', () => {
     expect(layer.type).toBe('circle');
   });
 
-  it('flyTo + fitBounds proxy through to MapLibre', () => {
+  it('flyTo + fitBounds proxy through to the renderer', () => {
     const fake = fakeMaplibre();
-    const sm = new ScoovaMap({ container: 'map', MapLibre: fake.lib });
+    const sm = new ScoovaMap({ container: 'map', renderer: fake.lib, apiKey: 'test-key' });
     sm.flyTo({ lat: 30.04, lon: 31.24 }, 14);
     sm.fitBounds([{ lat: 30, lon: 31 }, { lat: 31, lon: 32 }]);
     const m = fake.instances[0];
@@ -177,12 +197,26 @@ describe('ScoovaMap', () => {
       .toEqual([[31, 30], [32, 31]]);
   });
 
-  it('appends ?locale=… to the style URL when locale is passed', () => {
+  it('requests the real per-language style variant (name-suffixed, not a query param) for a localized style', () => {
     const fake = fakeMaplibre();
-    new ScoovaMap({ container: 'map', MapLibre: fake.lib, locale: 'fr' });
+    new ScoovaMap({ container: 'map', renderer: fake.lib, apiKey: 'test-key', lang: 'fr' });
     const opts = fake.lastOpts() as { style: string };
-    expect(typeof opts.style).toBe('string');
-    expect(opts.style).toContain('locale=fr');
+    expect(opts.style).toContain('/tiles/styles/scoova-gmaps-fr/style.json');
+    expect(opts.style).not.toContain('locale=');
+  });
+
+  it('leaves a non-localized style name unsuffixed regardless of lang', () => {
+    const fake = fakeMaplibre();
+    new ScoovaMap({ container: 'map', renderer: fake.lib, apiKey: 'test-key', style: 'scoova-satellite', lang: 'ar' });
+    const opts = fake.lastOpts() as { style: string };
+    expect(opts.style).toContain('/tiles/styles/scoova-satellite/style.json');
+  });
+
+  it('still accepts the deprecated locale key as an alias for lang', () => {
+    const fake = fakeMaplibre();
+    new ScoovaMap({ container: 'map', renderer: fake.lib, apiKey: 'test-key', locale: 'ar' } as never);
+    const opts = fake.lastOpts() as { style: string };
+    expect(opts.style).toContain('/tiles/styles/scoova-gmaps-ar/style.json');
   });
 });
 
@@ -278,19 +312,28 @@ describe('staticMap (fetch wrapper)', () => {
 });
 
 describe('styleUrl', () => {
-  it('points at tiles.scoo-va.info by default', () => {
-    const url = styleUrl('scoova-light', { apiKey: 'k' });
-    expect(url.startsWith(`${DEFAULT_TILES_BASE}/styles/scoova-light/style.json?`)).toBe(true);
+  it('points at the real api-key-gated gateway by default, not a raw tile subdomain', () => {
+    const url = styleUrl('scoova-gmaps', { apiKey: 'k' });
+    expect(url.startsWith(`${DEFAULT_API_BASE}/tiles/styles/scoova-gmaps/style.json?`)).toBe(true);
     expect(url).toContain('api_key=k');
   });
 
-  it('includes locale and supports tilesBase override', () => {
-    const url = styleUrl('scoova-dark', {
+  it('suffixes the style name (not a query param) for a localized style + lang', () => {
+    const url = styleUrl('scoova-gmaps-dark', { apiKey: 'k', lang: 'pt-BR' });
+    expect(url).toContain('/tiles/styles/scoova-gmaps-dark-pt-BR/style.json?');
+    expect(url).not.toContain('locale=');
+  });
+
+  it('supports an apiBase override and strips a trailing slash', () => {
+    const url = styleUrl('scoova-gmaps', {
       apiKey: 'k',
-      locale: 'pt-BR',
-      tilesBase: 'https://my-tiles.example.test/',
+      apiBase: 'https://gateway.example.test/api/v1/',
     });
-    expect(url.startsWith('https://my-tiles.example.test/styles/scoova-dark/style.json?')).toBe(true);
-    expect(url).toContain('locale=pt-BR');
+    expect(url.startsWith('https://gateway.example.test/api/v1/tiles/styles/scoova-gmaps/style.json?')).toBe(true);
+  });
+
+  it('passes an arbitrary/custom style name through unchanged', () => {
+    const url = styleUrl('my-custom-style', { apiKey: 'k' });
+    expect(url).toContain('/tiles/styles/my-custom-style/style.json?');
   });
 });

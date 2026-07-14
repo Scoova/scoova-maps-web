@@ -1,6 +1,6 @@
 {
   "name": "@scoova/maps",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Scoova map SDK for the web \u2014 Web map renderer with Scoova tile/style defaults, route overlays, marker helpers, and static-map URL builders.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,10 +34,10 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "maplibre-gl": ">=3.0.0"
+    "@scoova/mgl": ">=1.0.0"
   },
   "peerDependenciesMeta": {
-    "maplibre-gl": {
+    "@scoova/mgl": {
       "optional": false
     }
   },
