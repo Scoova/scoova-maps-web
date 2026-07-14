@@ -52,7 +52,7 @@ export interface StaticMapPath {
 }
 
 export interface StaticMapOptions {
-  /** Style name, e.g. `scoova-light`, `scoova-dark`, `scoova-satellite`. */
+  /** Style name, e.g. `scoova-gmaps`, `scoova-gmaps-dark`, `scoova-satellite`. */
   style: string;
   /** Image width in pixels. */
   width: number;
